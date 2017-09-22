@@ -117,25 +117,49 @@ public class MotionParams {
     }
 
     public String getMoveState(MoveDirection dir) {
-        return move_state_prefix +
-            (dir == MoveDirection.UP ? "Up" :
-             dir == MoveDirection.DOWN ? "Down" :
-             dir == MoveDirection.LEFT ? "Left" :
-             dir == MoveDirection.RIGHT ? "Right" :
-             dir == MoveDirection.UP_LEFT ? "UpLeft" :
-             dir == MoveDirection.UP_RIGHT ? "UpRight" :
-             dir == MoveDirection.DOWN_LEFT ? "DownLeft" :
-             dir == MoveDirection.DOWN_RIGHT ? "DownRight" :
-             "");
+        return move_state_prefix + enumToString(dir);
     }
 
     public String getWallState(WallDirection dir) {
-        return wall_state_prefix +
-            (dir == WallDirection.UP ? "Up" :
-             dir == WallDirection.DOWN ? "Down" :
-             dir == WallDirection.LEFT ? "Left" :
-             dir == WallDirection.RIGHT ? "Right" :
-             "");
+        return wall_state_prefix + enumToString(dir);
+    }
+
+    private static String enumToString(final WallDirection dir) {
+        switch (dir) {
+            case UP:
+                return "Up";
+            case DOWN:
+                return "Down";
+            case LEFT:
+                return "Left";
+            case RIGHT:
+                return "Right";
+            default:
+                return "";
+        }
+    }
+
+    private static String enumToString(final MoveDirection dir) {
+        switch (dir) {
+            case UP:
+                return "Up";
+            case DOWN:
+                return "Down";
+            case LEFT:
+                return "Left";
+            case RIGHT:
+                return "Right";
+            case UP_LEFT:
+                return "UpLeft";
+            case UP_RIGHT:
+                return "UpRight";
+            case DOWN_LEFT:
+                return "DownLeft";
+            case DOWN_RIGHT:
+                return "DownRight";
+            default:
+                return "";
+        }
     }
 
     public String getNextState(String state) {
