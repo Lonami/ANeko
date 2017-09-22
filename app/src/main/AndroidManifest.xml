@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="org.tamanegi.aneko"
+          package="io.github.lonamiwebs.aneko"
           android:versionCode="5"
           android:versionName="0.1.1">
 
@@ -35,9 +35,9 @@
     <activity android:name=".NekoSkin"
               android:label="@string/skin_name_neko">
       <intent-filter>
-        <action android:name="org.tamanegi.aneko.action.GET_SKIN" />
+        <action android:name="io.github.lonamiwebs.aneko.action.GET_SKIN" />
       </intent-filter>
-      <meta-data android:name="org.tamanegi.aneko.skin"
+      <meta-data android:name="io.github.lonamiwebs.aneko.skin"
                  android:resource="@xml/neko" />
     </activity>
 

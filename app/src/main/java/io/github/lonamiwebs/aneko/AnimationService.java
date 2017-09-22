@@ -1,4 +1,4 @@
-package org.tamanegi.aneko;
+package io.github.lonamiwebs.aneko;
 
 import java.util.Random;
 
@@ -34,14 +34,14 @@ import android.widget.Toast;
 
 public class AnimationService extends Service
 {
-    public static final String ACTION_START = "org.tamanegi.aneko.action.START";
-    public static final String ACTION_STOP = "org.tamanegi.aneko.action.STOP";
+    public static final String ACTION_START = "io.github.lonamiwebs.aneko.action.START";
+    public static final String ACTION_STOP = "io.github.lonamiwebs.aneko.action.STOP";
     public static final String ACTION_TOGGLE =
-        "org.tamanegi.aneko.action.TOGGLE";
+        "io.github.lonamiwebs.aneko.action.TOGGLE";
 
     public static final String ACTION_GET_SKIN =
-        "org.tamanegi.aneko.action.GET_SKIN";
-    public static final String META_KEY_SKIN = "org.tamanegi.aneko.skin";
+        "io.github.lonamiwebs.aneko.action.GET_SKIN";
+    public static final String META_KEY_SKIN = "io.github.lonamiwebs.aneko.skin";
 
     public static final String PREF_KEY_ENABLE = "motion.enable";
     public static final String PREF_KEY_VISIBLE = "motion.visible";

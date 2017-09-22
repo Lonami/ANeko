@@ -1,4 +1,4 @@
-package org.tamanegi.aneko;
+package io.github.lonamiwebs.aneko;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

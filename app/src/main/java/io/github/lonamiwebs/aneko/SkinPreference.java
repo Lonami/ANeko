@@ -1,4 +1,4 @@
-package org.tamanegi.aneko;
+package io.github.lonamiwebs.aneko;
 
 import java.util.ArrayList;
 import java.util.HashMap;
