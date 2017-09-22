@@ -67,8 +67,9 @@ public class AnimationService extends Service
     }
     private static final Behaviour BEHAVIOURS[] = {
         Behaviour.closer, Behaviour.further, Behaviour.whimsical };
+
     private static final boolean ICS_OR_LATER =
-        (Build.VERSION.SDK_INT >= 14);
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 
     private boolean is_started;
     private SharedPreferences prefs;
@@ -245,15 +246,14 @@ public class AnimationService extends Service
             new Intent(this, AnimationService.class).setAction(ACTION_TOGGLE),
             0);
 
-        Notification notif = new Notification(
-            (start ? R.drawable.mati1 : R.drawable.sleep1), null, 0);
-        notif.setLatestEventInfo(
-            this,
-            getString(R.string.app_name),
-            getString(start ?
-                      R.string.notification_enable :
-                      R.string.notification_disable),
-            intent);
+        Notification notif = new Notification.Builder(this)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(start ? R.string.notification_enable : R.string.notification_disable))
+                .setSmallIcon(start ? R.drawable.mati1 : R.drawable.sleep1)
+                .setContentIntent(intent)
+                .setWhen(0)
+                .build();
+
         notif.flags = Notification.FLAG_ONGOING_EVENT;
 
         if(start) {
@@ -541,7 +541,7 @@ public class AnimationService extends Service
 
             float dx = target_x - cur_x;
             float dy = target_y - cur_y;
-            float len = FloatMath.sqrt(dx * dx + dy * dy);
+            float len = (float) Math.sqrt(dx * dx + dy * dy);
             if(len <= params.getProximityDistance()) {
                 if(moving_state) {
                     vx = 0;
@@ -567,7 +567,7 @@ public class AnimationService extends Service
 
             vx += acceleration * interval * dx / len;
             vy += acceleration * interval * dy / len;
-            float vec = FloatMath.sqrt(vx * vx + vy * vy);
+            float vec = (float) Math.sqrt(vx * vx + vy * vy);
             float vmax = max_velocity *
                 Math.min((len + 1) / (deaccelerate_distance + 1), 1);
             if(vec > vmax) {
@@ -637,7 +637,7 @@ public class AnimationService extends Service
 
             float dx = target_x - cur_x;
             float dy = target_y - cur_y;
-            float len = FloatMath.sqrt(dx * dx + dy * dy);
+            float len = (float) Math.sqrt(dx * dx + dy * dy);
             if(len <= params.getProximityDistance()) {
                 return false;
             }
@@ -757,9 +757,9 @@ public class AnimationService extends Service
                 float dx = display_width / 2f - x;
                 float dy = display_height / 2f - y;
                 if(dx == 0 && dy == 0) {
-                    float ang = random.nextFloat() * (float)Math.PI * 2;
-                    dx = FloatMath.cos(ang);
-                    dy = FloatMath.sin(ang);
+                    float ang = random.nextFloat() * (float) Math.PI * 2;
+                    dx = (float) Math.cos(ang);
+                    dy = (float) Math.sin(ang);
                 }
                 if(dx < 0) {
                     dx = -dx;
@@ -799,8 +799,8 @@ public class AnimationService extends Service
                 float min_wh2 = Math.min(display_width, display_height) / 2f;
                 float r = random.nextFloat() * min_wh2 + min_wh2;
                 float a = random.nextFloat() * 360;
-                float nx = cur_x + r * FloatMath.cos(a);
-                float ny = cur_y + r * FloatMath.sin(a);
+                float nx = cur_x + r * (float) Math.cos(a);
+                float ny = cur_y + r * (float) Math.sin(a);
 
                 nx = (nx < 0 ? -nx :
                       nx >= display_width ? display_width * 2 - nx - 1 :
