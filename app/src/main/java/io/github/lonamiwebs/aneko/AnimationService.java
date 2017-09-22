@@ -733,23 +733,6 @@ public class AnimationService extends Service
 
         private void setTargetPosition(float x, float y)
         {
-            if(! ICS_OR_LATER) {
-                long cur_time = System.currentTimeMillis();
-                double r = (double)(cur_time - last_behaviour_changed) /
-                    BEHAVIOUR_CHANGE_DURATION;
-                if(behaviour == Behaviour.whimsical &&
-                   (r < 0 || random.nextDouble() * r > 1)) {
-                    int next_idx = random.nextInt(BEHAVIOURS.length);
-                    if(next_idx != cur_behaviour_idx) {
-                        last_behaviour_changed = cur_time;
-                    }
-                    cur_behaviour_idx = next_idx;
-                }
-            }
-            else {
-                cur_behaviour_idx = BEHAVIOURS.length - 1;
-            }
-
             if(BEHAVIOURS[cur_behaviour_idx] == Behaviour.closer) {
                 setTargetPositionDirect(x, y);
             }
