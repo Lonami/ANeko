@@ -130,7 +130,7 @@ public class AnimationService extends Service {
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         int dw = wm.getDefaultDisplay().getWidth();
         int dh = wm.getDefaultDisplay().getHeight();
-        motionState.setDisplaySize(dw, dh);
+        motionState.display.set(dw, dh);
     }
 
     private void startAnimation() {
@@ -309,9 +309,9 @@ public class AnimationService extends Service {
         motionState.setBehaviour(Behaviour.fromName(
                 prefs.getString(PREF_KEY_BEHAVIOUR, motionState.behaviour.toString())));
 
-        motionState.setDisplaySize(dw, dh);
-        motionState.setCurrentPosition(cx, cy);
-        motionState.setTargetPositionDirect(dw / 2, dh / 2);
+        motionState.display.set(dw, dh);
+        motionState.cur.set(cx, cy);
+        motionState.target.set(dw / 2, dh / 2);
 
         return true;
     }

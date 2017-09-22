@@ -13,15 +13,10 @@ import static io.github.lonamiwebs.aneko.service.AnimationService.ANIMATION_INTE
 
 
 class MotionState {
-    float curX = 0;
-    float curY = 0;
-    float targetX = 0;
-    float targetY = 0;
-    float vx = 0; // pixels per sec
-    float vy = 0; // pixels per sec
-
-    int displayWidth = 1;
-    int displayHeight = 1;
+    PointF cur = new PointF();
+    PointF target = new PointF();
+    PointF vel = new PointF(); // pixels per sec
+    Point display = new Point(1, 1); // screen dimensions
 
     MotionParams params;
     int alpha = 0xff;
@@ -47,13 +42,11 @@ class MotionState {
         stateChanged = false;
         positionMoved = false;
 
-        float dx = targetX - curX;
-        float dy = targetY - curY;
-        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        PointF d = new PointF(target.x - cur.x, target.y - cur.y);
+        float len = d.length();
         if (len <= params.getProximityDistance()) {
             if (movingState) {
-                vx = 0;
-                vy = 0;
+                vel.set(0, 0);
                 changeState(params.getInitialState());
             }
             return;
@@ -73,18 +66,18 @@ class MotionState {
         float maxVelocity = params.getMaxVelocity();
         float deaccelerationDistance = params.getDeaccelerationDistance();
 
-        vx += acceleration * interval * dx / len;
-        vy += acceleration * interval * dy / len;
-        float vec = (float) Math.sqrt(vx * vx + vy * vy);
+        vel.x += acceleration * interval * d.x / len;
+        vel.y += acceleration * interval * d.y / len;
+        float vec = vel.length();
         float vmax = maxVelocity * Math.min((len + 1) / (deaccelerationDistance + 1), 1);
         if (vec > vmax) {
             float vr = vmax / vec;
-            vx *= vr;
-            vy *= vr;
+            vel.x *= vr;
+            vel.y *= vr;
         }
 
-        curX += vx * interval;
-        curY += vy * interval;
+        cur.x += vel.x * interval;
+        cur.y += vel.y * interval;
         positionMoved = true;
 
         changeToMovingState();
@@ -101,19 +94,19 @@ class MotionState {
         float dh2 = drawable.getIntrinsicHeight() / 2f;
 
         MotionParams.WallDirection dir;
-        float nx = curX;
-        float ny = curY;
-        if (curX >= 0 && curX < dw2) {
+        float nx = cur.x;
+        float ny = cur.y;
+        if (cur.x >= 0 && cur.x < dw2) {
             nx = dw2;
             dir = MotionParams.WallDirection.LEFT;
-        } else if (curX <= displayWidth && curX > displayWidth - dw2) {
-            nx = displayWidth - dw2;
+        } else if (cur.x <= display.x && cur.x > display.x - dw2) {
+            nx = display.x - dw2;
             dir = MotionParams.WallDirection.RIGHT;
-        } else if (curY >= 0 && curY < dh2) {
+        } else if (cur.y >= 0 && cur.y < dh2) {
             ny = dh2;
             dir = MotionParams.WallDirection.UP;
-        } else if (curY <= displayHeight && curY > displayHeight - dh2) {
-            ny = displayHeight - dh2;
+        } else if (cur.y <= display.y && cur.y > display.y - dh2) {
+            ny = display.y - dh2;
             dir = MotionParams.WallDirection.DOWN;
         } else {
             return false;
@@ -124,8 +117,8 @@ class MotionState {
             return false;
         }
 
-        curX = targetX = nx;
-        curY = targetY = ny;
+        cur.x = target.x = nx;
+        cur.y = target.y = ny;
         changeState(nstate);
 
         return true;
@@ -136,8 +129,8 @@ class MotionState {
             return false;
         }
 
-        float dx = targetX - curX;
-        float dy = targetY - curY;
+        float dx = target.x - cur.x;
+        float dy = target.y - cur.y;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
         if (len <= params.getProximityDistance()) {
             return false;
@@ -182,7 +175,7 @@ class MotionState {
     }
 
     void changeToMovingState() {
-        int dir = (int) (Math.atan2(vy, vx) * 4 / Math.PI + 8.5) % 8;
+        int dir = (int) (Math.atan2(vel.y, vel.x) * 4 / Math.PI + 8.5) % 8;
         MotionParams.MoveDirection dirs[] = {
                 MotionParams.MoveDirection.RIGHT,
                 MotionParams.MoveDirection.DOWN_RIGHT,
@@ -203,38 +196,18 @@ class MotionState {
         movingState = true;
     }
 
-    void setDisplaySize(int w, int h) {
-        displayWidth = w;
-        displayHeight = h;
-    }
-
     void setBehaviour(Behaviour b) {
         behaviour = b;
         lastBehaviourChanged = 0;
     }
 
-    void setCurrentPosition(float x, float y) {
-        curX = x;
-        curY = y;
-    }
-
     void setTargetPosition(float x, float y) {
-        PointF target = behaviour.getTargetPosition(
-                new PointF(x, y), new PointF(curX, curY), new PointF(displayWidth, displayHeight));
-
-        targetX = target.x;
-        targetY = target.y;
-    }
-
-    void setTargetPositionDirect(float x, float y) {
-        targetX = x;
-        targetY = y;
+        target = behaviour.getTargetPosition(new PointF(x, y), cur, display);
     }
 
     void forceStop() {
-        setTargetPosition(curX, curY);
-        vx = 0;
-        vy = 0;
+        setTargetPosition(cur.x, cur.y);
+        vel.set(0, 0);
     }
 
     boolean isStateChanged() {
@@ -251,7 +224,7 @@ class MotionState {
 
     Point getPosition() {
         MotionDrawable drawable = getCurrentDrawable();
-        return new Point((int) (curX - drawable.getIntrinsicWidth() / 2f),
-                (int) (curY - drawable.getIntrinsicHeight() / 2f));
+        return new Point((int) (cur.x - drawable.getIntrinsicWidth() / 2f),
+                (int) (cur.y - drawable.getIntrinsicHeight() / 2f));
     }
 }
