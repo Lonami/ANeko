@@ -37,7 +37,7 @@ public class SkinPreference extends DialogPreference {
     };
 
     private List<Map<String, Object>> data;
-    private int clicked_index;
+    private int clickedIndex;
 
     private ComponentName val;
 
@@ -76,7 +76,7 @@ public class SkinPreference extends DialogPreference {
         super.onPrepareDialogBuilder(builder);
 
         data = createListData();
-        clicked_index = -1;
+        clickedIndex = -1;
 
         SimpleAdapter adapter = new SimpleAdapter(
                 getContext(), data, R.layout.preference_skin_item,
@@ -87,7 +87,7 @@ public class SkinPreference extends DialogPreference {
                 adapter,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int witch) {
-                        clicked_index = witch;
+                        clickedIndex = witch;
 
                         SkinPreference.this.onClick(
                             dialog, DialogInterface.BUTTON_POSITIVE);
@@ -122,8 +122,8 @@ public class SkinPreference extends DialogPreference {
     protected void onDialogClosed(boolean positiveResult) {
         super.onDialogClosed(positiveResult);
 
-        if (positiveResult && clicked_index >= 0) {
-            ComponentName comp = (ComponentName) data.get(clicked_index).get(KEY_COMPONENT);
+        if (positiveResult && clickedIndex >= 0) {
+            ComponentName comp = (ComponentName) data.get(clickedIndex).get(KEY_COMPONENT);
             if (callChangeListener(comp)) {
                 setValue(comp);
             }

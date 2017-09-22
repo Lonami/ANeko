@@ -23,31 +23,31 @@ public class SkinActivity extends Activity
     {
         super.onResume();
 
-        boolean package_found = false;
+        boolean packageFound = false;
         try {
             PackageManager pm = getPackageManager();
-            package_found = (pm.getPackageInfo(ANEKO_PACKAGE, 0) != null);
+            packageFound = (pm.getPackageInfo(ANEKO_PACKAGE, 0) != null);
         }
         catch(PackageManager.NameNotFoundException e) {
             // ignore
         }
 
-        int msg_id;
+        int msgId;
         final Intent intent;
-        if(package_found) {
-            msg_id = R.string.msg_usage;
+        if(packageFound) {
+            msgId = R.string.msg_usage;
             intent = new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setClassName(ANEKO_PACKAGE, ANEKO_ACTIVITY);
         }
         else {
-            msg_id = R.string.msg_no_package;
+            msgId = R.string.msg_no_package;
             intent = new Intent(Intent.ACTION_VIEW, ANEKO_MARKET_URI);
         }
 
         new AlertDialog.Builder(this)
             .setTitle(R.string.app_name)
-            .setMessage(msg_id)
+            .setMessage(msgId)
             .setPositiveButton(
                 android.R.string.ok,
                 new DialogInterface.OnClickListener() {

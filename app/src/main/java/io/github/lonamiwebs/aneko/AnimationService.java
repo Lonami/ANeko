@@ -70,22 +70,22 @@ public class AnimationService extends Service {
     private static final boolean ICS_OR_LATER =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 
-    private boolean is_started;
+    private boolean isStarted;
     private SharedPreferences prefs;
-    private PreferenceChangeListener pref_listener;
+    private PreferenceChangeListener prefListener;
 
     private Handler handler;
-    private MotionState motion_state = null;
+    private MotionState motionState;
     private Random random;
-    private View touch_view = null;
-    private ImageView image_view = null;
-    private WindowManager.LayoutParams touch_params = null;
-    private WindowManager.LayoutParams image_params = null;
-    private BroadcastReceiver receiver = null;
+    private View touchView;
+    private ImageView imageView;
+    private WindowManager.LayoutParams touchParams;
+    private WindowManager.LayoutParams imageParams;
+    private BroadcastReceiver receiver;
 
     @Override
     public void onCreate() {
-        is_started = false;
+        isStarted = false;
         handler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
@@ -108,17 +108,17 @@ public class AnimationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (!is_started && (intent == null || ACTION_START.equals(intent.getAction()))) {
+        if (!isStarted && (intent == null || ACTION_START.equals(intent.getAction()))) {
             startAnimation();
             setForegroundNotification(true);
-            is_started = true;
+            isStarted = true;
         } else if (ACTION_TOGGLE.equals(intent.getAction())) {
             toggleAnimation();
-        } else if (is_started && ACTION_STOP.equals(intent.getAction())) {
+        } else if (isStarted && ACTION_STOP.equals(intent.getAction())) {
             stopAnimation();
             stopSelfResult(startId);
             setForegroundNotification(false);
-            is_started = false;
+            isStarted = false;
         }
 
         return START_REDELIVER_INTENT;
@@ -126,19 +126,19 @@ public class AnimationService extends Service {
 
     @Override
     public void onConfigurationChanged(Configuration conf) {
-        if (!is_started || motion_state == null) {
+        if (!isStarted || motionState == null) {
             return;
         }
 
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         int dw = wm.getDefaultDisplay().getWidth();
         int dh = wm.getDefaultDisplay().getHeight();
-        motion_state.setDisplaySize(dw, dh);
+        motionState.setDisplaySize(dw, dh);
     }
 
     private void startAnimation() {
-        pref_listener = new PreferenceChangeListener();
-        prefs.registerOnSharedPreferenceChangeListener(pref_listener);
+        prefListener = new PreferenceChangeListener();
+        prefs.registerOnSharedPreferenceChangeListener(prefListener);
 
         if (!checkPrefEnable()) {
             return;
@@ -163,9 +163,9 @@ public class AnimationService extends Service {
         // touch event sink and overlay view
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-        touch_view = new View(this);
-        touch_view.setOnTouchListener(new TouchListener());
-        touch_params = new WindowManager.LayoutParams(
+        touchView = new View(this);
+        touchView.setOnTouchListener(new TouchListener());
+        touchParams = new WindowManager.LayoutParams(
                 0, 0,
                 (ICS_OR_LATER ?
                         WindowManager.LayoutParams.TYPE_SYSTEM_ERROR :
@@ -174,11 +174,11 @@ public class AnimationService extends Service {
                         WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                         WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT);
-        touch_params.gravity = Gravity.LEFT | Gravity.TOP;
-        wm.addView(touch_view, touch_params);
+        touchParams.gravity = Gravity.LEFT | Gravity.TOP;
+        wm.addView(touchView, touchParams);
 
-        image_view = new ImageView(this);
-        image_params = new WindowManager.LayoutParams(
+        imageView = new ImageView(this);
+        imageParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
@@ -186,29 +186,29 @@ public class AnimationService extends Service {
                         WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
-        image_params.gravity = Gravity.LEFT | Gravity.TOP;
-        wm.addView(image_view, image_params);
+        imageParams.gravity = Gravity.LEFT | Gravity.TOP;
+        wm.addView(imageView, imageParams);
 
         requestAnimate();
     }
 
     private void stopAnimation() {
-        prefs.unregisterOnSharedPreferenceChangeListener(pref_listener);
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener);
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-        if (touch_view != null) {
-            wm.removeView(touch_view);
+        if (touchView != null) {
+            wm.removeView(touchView);
         }
-        if (image_view != null) {
-            wm.removeView(image_view);
+        if (imageView != null) {
+            wm.removeView(imageView);
         }
         if (receiver != null) {
             unregisterReceiver(receiver);
         }
 
-        motion_state = null;
-        touch_view = null;
-        image_view = null;
+        motionState = null;
+        touchView = null;
+        imageView = null;
         receiver = null;
 
         handler.removeMessages(MSG_ANIMATE);
@@ -252,30 +252,29 @@ public class AnimationService extends Service {
     }
 
     private boolean loadMotionState() {
-        String skin_pkg = prefs.getString(PREF_KEY_SKIN_COMPONENT, null);
-        ComponentName skin_comp = skin_pkg == null ?
-                null : ComponentName.unflattenFromString(skin_pkg);
+        String skinPkg = prefs.getString(PREF_KEY_SKIN_COMPONENT, null);
+        ComponentName skinComp = skinPkg == null ? null : ComponentName.unflattenFromString(skinPkg);
 
-        if (skin_comp != null && loadMotionState(skin_comp)) {
+        if (skinComp != null && loadMotionState(skinComp)) {
             return true;
         }
 
-        skin_comp = new ComponentName(this, NekoSkin.class);
-        return loadMotionState(skin_comp);
+        skinComp = new ComponentName(this, NekoSkin.class);
+        return loadMotionState(skinComp);
     }
 
-    private boolean loadMotionState(ComponentName skin_comp) {
-        motion_state = new MotionState();
+    private boolean loadMotionState(ComponentName skinComp) {
+        motionState = new MotionState();
 
         try {
             PackageManager pm = getPackageManager();
-            ActivityInfo ai = pm.getActivityInfo(skin_comp, PackageManager.GET_META_DATA);
-            Resources res = pm.getResourcesForActivity(skin_comp);
+            ActivityInfo ai = pm.getActivityInfo(skinComp, PackageManager.GET_META_DATA);
+            Resources res = pm.getResourcesForActivity(skinComp);
 
             int rid = ai.metaData.getInt(META_KEY_SKIN, 0);
 
             MotionParams params = new MotionParams(this, res, rid);
-            motion_state.setParams(params);
+            motionState.setParams(params);
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, R.string.msg_skin_load_failed, Toast.LENGTH_LONG).show();
@@ -299,15 +298,15 @@ public class AnimationService extends Service {
             }
         }
 
-        String alpha_str = prefs.getString(PREF_KEY_TRANSPARENCY, "0.0");
-        motion_state.alpha = (int) ((1 - Float.valueOf(alpha_str)) * 0xff);
+        String alphaStr = prefs.getString(PREF_KEY_TRANSPARENCY, "0.0");
+        motionState.alpha = (int) ((1 - Float.valueOf(alphaStr)) * 0xff);
 
-        motion_state.setBehaviour(Behaviour.valueOf(
-                prefs.getString(PREF_KEY_BEHAVIOUR, motion_state.behaviour.toString())));
+        motionState.setBehaviour(Behaviour.valueOf(
+                prefs.getString(PREF_KEY_BEHAVIOUR, motionState.behaviour.toString())));
 
-        motion_state.setDisplaySize(dw, dh);
-        motion_state.setCurrentPosition(cx, cy);
-        motion_state.setTargetPositionDirect(dw / 2, dh / 2);
+        motionState.setDisplaySize(dw, dh);
+        motionState.setCurrentPosition(cx, cy);
+        motionState.setTargetPositionDirect(dw / 2, dh / 2);
 
         return true;
     }
@@ -319,34 +318,34 @@ public class AnimationService extends Service {
     }
 
     private void updateDrawable() {
-        if (motion_state == null || image_view == null) {
+        if (motionState == null || imageView == null) {
             return;
         }
 
-        MotionDrawable drawable = motion_state.getCurrentDrawable();
+        MotionDrawable drawable = motionState.getCurrentDrawable();
         if (drawable == null) {
             return;
         }
 
-        drawable.setAlpha(motion_state.alpha);
-        image_view.setImageDrawable(drawable);
+        drawable.setAlpha(motionState.alpha);
+        imageView.setImageDrawable(drawable);
         drawable.stop();
         drawable.start();
     }
 
     private void updatePosition() {
-        Point pt = motion_state.getPosition();
-        image_params.x = pt.x;
-        image_params.y = pt.y;
+        Point pt = motionState.getPosition();
+        imageParams.x = pt.x;
+        imageParams.y = pt.y;
 
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-        wm.updateViewLayout(image_view, image_params);
+        wm.updateViewLayout(imageView, imageParams);
     }
 
     private void updateToNext() {
-        if (motion_state.checkWall() ||
-                motion_state.updateMovingState() ||
-                motion_state.changeToNextState()) {
+        if (motionState.checkWall() ||
+                motionState.updateMovingState() ||
+                motionState.changeToNextState()) {
             updateDrawable();
             updatePosition();
             requestAnimate();
@@ -358,10 +357,10 @@ public class AnimationService extends Service {
             case MSG_ANIMATE:
                 handler.removeMessages(MSG_ANIMATE);
 
-                motion_state.updateState();
-                if (motion_state.isStateChanged() ||
-                        motion_state.isPositionMoved()) {
-                    if (motion_state.isStateChanged()) {
+                motionState.updateState();
+                if (motionState.isStateChanged() ||
+                        motionState.isPositionMoved()) {
+                    if (motionState.isStateChanged()) {
                         updateDrawable();
                     }
 
@@ -417,14 +416,14 @@ public class AnimationService extends Service {
             }
 
             String skin = prefs.getString(PREF_KEY_SKIN_COMPONENT, null);
-            ComponentName skin_comp = skin == null ? null : ComponentName.unflattenFromString(skin);
-            if (skin_comp == null) {
+            ComponentName skinComp = skin == null ? null : ComponentName.unflattenFromString(skin);
+            if (skinComp == null) {
                 return;
             }
 
-            String skin_pkg = skin_comp.getPackageName();
+            String skinPkg = skinComp.getPackageName();
             for (String pkgname : pkgnames) {
-                if (skin_pkg.equals(pkgname)) {
+                if (skinPkg.equals(pkgname)) {
                     if (loadMotionState()) {
                         requestAnimate();
                     }
@@ -436,15 +435,15 @@ public class AnimationService extends Service {
 
     private class TouchListener implements View.OnTouchListener {
         public boolean onTouch(View v, MotionEvent ev) {
-            if (motion_state == null) {
+            if (motionState == null) {
                 return false;
             }
 
             if (ev.getAction() == MotionEvent.ACTION_OUTSIDE) {
-                motion_state.setTargetPosition(ev.getX(), ev.getY());
+                motionState.setTargetPosition(ev.getX(), ev.getY());
                 requestAnimate();
             } else if (ev.getAction() == MotionEvent.ACTION_CANCEL) {
-                motion_state.forceStop();
+                motionState.forceStop();
                 requestAnimate();
             }
 
@@ -453,40 +452,40 @@ public class AnimationService extends Service {
     }
 
     private class MotionState {
-        private float cur_x = 0;
-        private float cur_y = 0;
-        private float target_x = 0;
-        private float target_y = 0;
+        private float curX = 0;
+        private float curY = 0;
+        private float targetX = 0;
+        private float targetY = 0;
         private float vx = 0;                   // pixels per sec
         private float vy = 0;                   // pixels per sec
 
-        private int display_width = 1;
-        private int display_height = 1;
+        private int displayWidth = 1;
+        private int displayHeight = 1;
 
         private MotionParams params;
         private int alpha = 0xff;
 
         private Behaviour behaviour = Behaviour.closer;
-        private int cur_behaviour_idx = 0;
-        private long last_behaviour_changed = 0;
+        private int curBehaviourIdx = 0;
+        private long lastBehaviourChanged = 0;
 
-        private String cur_state = null;
+        private String curState = null;
 
-        private boolean moving_state = false;
-        private boolean state_changed = false;
-        private boolean position_moved = false;
+        private boolean movingState = false;
+        private boolean stateChanged = false;
+        private boolean positionMoved = false;
 
-        private MotionEndListener on_motion_end = new MotionEndListener();
+        private MotionEndListener onMotionEnd = new MotionEndListener();
 
         private void updateState() {
-            state_changed = false;
-            position_moved = false;
+            stateChanged = false;
+            positionMoved = false;
 
-            float dx = target_x - cur_x;
-            float dy = target_y - cur_y;
+            float dx = targetX - curX;
+            float dy = targetY - curY;
             float len = (float) Math.sqrt(dx * dx + dy * dy);
             if (len <= params.getProximityDistance()) {
-                if (moving_state) {
+                if (movingState) {
                     vx = 0;
                     vy = 0;
                     changeState(params.getInitialState());
@@ -494,7 +493,7 @@ public class AnimationService extends Service {
                 return;
             }
 
-            if (!moving_state) {
+            if (!movingState) {
                 String nstate = params.getAwakeState();
                 if (params.hasState(nstate)) {
                     changeState(nstate);
@@ -505,29 +504,29 @@ public class AnimationService extends Service {
             float interval = ANIMATION_INTERVAL / 1000f;
 
             float acceleration = params.getAcceleration();
-            float max_velocity = params.getMaxVelocity();
-            float deaccelerate_distance = params.getDeaccelerationDistance();
+            float maxVelocity = params.getMaxVelocity();
+            float deaccelerationDistance = params.getDeaccelerationDistance();
 
             vx += acceleration * interval * dx / len;
             vy += acceleration * interval * dy / len;
             float vec = (float) Math.sqrt(vx * vx + vy * vy);
-            float vmax = max_velocity * Math.min((len + 1) / (deaccelerate_distance + 1), 1);
+            float vmax = maxVelocity * Math.min((len + 1) / (deaccelerationDistance + 1), 1);
             if (vec > vmax) {
                 float vr = vmax / vec;
                 vx *= vr;
                 vy *= vr;
             }
 
-            cur_x += vx * interval;
-            cur_y += vy * interval;
-            position_moved = true;
+            curX += vx * interval;
+            curY += vy * interval;
+            positionMoved = true;
 
             changeToMovingState();
             return;
         }
 
         private boolean checkWall() {
-            if (!params.needCheckWall(cur_state)) {
+            if (!params.needCheckWall(curState)) {
                 return false;
             }
 
@@ -536,19 +535,19 @@ public class AnimationService extends Service {
             float dh2 = drawable.getIntrinsicHeight() / 2f;
 
             MotionParams.WallDirection dir;
-            float nx = cur_x;
-            float ny = cur_y;
-            if (cur_x >= 0 && cur_x < dw2) {
+            float nx = curX;
+            float ny = curY;
+            if (curX >= 0 && curX < dw2) {
                 nx = dw2;
                 dir = MotionParams.WallDirection.LEFT;
-            } else if (cur_x <= display_width && cur_x > display_width - dw2) {
-                nx = display_width - dw2;
+            } else if (curX <= displayWidth && curX > displayWidth - dw2) {
+                nx = displayWidth - dw2;
                 dir = MotionParams.WallDirection.RIGHT;
-            } else if (cur_y >= 0 && cur_y < dh2) {
+            } else if (curY >= 0 && curY < dh2) {
                 ny = dh2;
                 dir = MotionParams.WallDirection.UP;
-            } else if (cur_y <= display_height && cur_y > display_height - dh2) {
-                ny = display_height - dh2;
+            } else if (curY <= displayHeight && curY > displayHeight - dh2) {
+                ny = displayHeight - dh2;
                 dir = MotionParams.WallDirection.DOWN;
             } else {
                 return false;
@@ -559,20 +558,20 @@ public class AnimationService extends Service {
                 return false;
             }
 
-            cur_x = target_x = nx;
-            cur_y = target_y = ny;
+            curX = targetX = nx;
+            curY = targetY = ny;
             changeState(nstate);
 
             return true;
         }
 
         private boolean updateMovingState() {
-            if (!params.needCheckMove(cur_state)) {
+            if (!params.needCheckMove(curState)) {
                 return false;
             }
 
-            float dx = target_x - cur_x;
-            float dy = target_y - cur_y;
+            float dx = targetX - curX;
+            float dy = targetY - curY;
             float len = (float) Math.sqrt(dx * dx + dy * dy);
             if (len <= params.getProximityDistance()) {
                 return false;
@@ -592,27 +591,27 @@ public class AnimationService extends Service {
             params = _params;
 
             changeState(nstate);
-            moving_state = false;
+            movingState = false;
         }
 
         private void changeState(String state) {
-            if (state.equals(cur_state)) {
+            if (state.equals(curState)) {
                 return;
             }
 
-            cur_state = state;
-            state_changed = true;
-            moving_state = false;
-            getCurrentDrawable().setOnMotionEndListener(on_motion_end);
+            curState = state;
+            stateChanged = true;
+            movingState = false;
+            getCurrentDrawable().setOnMotionEndListener(onMotionEnd);
         }
 
         private boolean changeToNextState() {
-            String next_state = params.getNextState(motion_state.cur_state);
-            if (next_state == null) {
+            String nextState = params.getNextState(motionState.curState);
+            if (nextState == null) {
                 return false;
             }
 
-            changeState(next_state);
+            changeState(nextState);
             return true;
         }
 
@@ -635,37 +634,37 @@ public class AnimationService extends Service {
             }
 
             changeState(nstate);
-            moving_state = true;
+            movingState = true;
         }
 
         private void setDisplaySize(int w, int h) {
-            display_width = w;
-            display_height = h;
+            displayWidth = w;
+            displayHeight = h;
         }
 
         private void setBehaviour(Behaviour b) {
             behaviour = b;
-            last_behaviour_changed = 0;
+            lastBehaviourChanged = 0;
 
             for (int i = 0; i < BEHAVIOURS.length; i++) {
                 if (BEHAVIOURS[i] == behaviour) {
-                    cur_behaviour_idx = i;
+                    curBehaviourIdx = i;
                     break;
                 }
             }
         }
 
         private void setCurrentPosition(float x, float y) {
-            cur_x = x;
-            cur_y = y;
+            curX = x;
+            curY = y;
         }
 
         private void setTargetPosition(float x, float y) {
-            if (BEHAVIOURS[cur_behaviour_idx] == Behaviour.closer) {
+            if (BEHAVIOURS[curBehaviourIdx] == Behaviour.closer) {
                 setTargetPositionDirect(x, y);
-            } else if (BEHAVIOURS[cur_behaviour_idx] == Behaviour.further) {
-                float dx = display_width / 2f - x;
-                float dy = display_height / 2f - y;
+            } else if (BEHAVIOURS[curBehaviourIdx] == Behaviour.further) {
+                float dx = displayWidth / 2f - x;
+                float dy = displayHeight / 2f - y;
                 if (dx == 0 && dy == 0) {
                     float ang = random.nextFloat() * (float) Math.PI * 2;
                     dx = (float) Math.cos(ang);
@@ -677,15 +676,15 @@ public class AnimationService extends Service {
                 }
 
                 PointF e1, e2;
-                if (dy > dx * display_height / display_width ||
-                        dy < -dx * display_height / display_width) {
+                if (dy > dx * displayHeight / displayWidth ||
+                        dy < -dx * displayHeight / displayWidth) {
                     float dxdy = dx / dy;
-                    e1 = new PointF((display_width - display_height * dxdy) / 2f, 0);
-                    e2 = new PointF((display_width + display_height * dxdy) / 2f, display_height);
+                    e1 = new PointF((displayWidth - displayHeight * dxdy) / 2f, 0);
+                    e2 = new PointF((displayWidth + displayHeight * dxdy) / 2f, displayHeight);
                 } else {
                     float dydx = dy / dx;
-                    e1 = new PointF(0, (display_height - display_width * dydx) / 2f);
-                    e2 = new PointF(display_width, (display_height + display_width * dydx) / 2f);
+                    e1 = new PointF(0, (displayHeight - displayWidth * dydx) / 2f);
+                    e2 = new PointF(displayWidth, (displayHeight + displayWidth * dydx) / 2f);
                 }
 
                 double d1 = Math.hypot(e1.x - x, e1.y - y);
@@ -695,49 +694,49 @@ public class AnimationService extends Service {
                 float r = 0.9f + random.nextFloat() * 0.1f;
                 setTargetPositionDirect(e.x * r + x * (1 - r), e.y * r + y * (1 - r));
             } else {
-                float min_wh2 = Math.min(display_width, display_height) / 2f;
-                float r = random.nextFloat() * min_wh2 + min_wh2;
+                float minWh2 = Math.min(displayWidth, displayHeight) / 2f;
+                float r = random.nextFloat() * minWh2 + minWh2;
                 float a = random.nextFloat() * 360;
-                float nx = cur_x + r * (float) Math.cos(a);
-                float ny = cur_y + r * (float) Math.sin(a);
+                float nx = curX + r * (float) Math.cos(a);
+                float ny = curY + r * (float) Math.sin(a);
 
                 nx = (nx < 0 ? -nx :
-                        nx >= display_width ? display_width * 2 - nx - 1 :
+                        nx >= displayWidth ? displayWidth * 2 - nx - 1 :
                                 nx);
                 ny = (ny < 0 ? -ny :
-                        ny >= display_height ? display_height * 2 - ny - 1 :
+                        ny >= displayHeight ? displayHeight * 2 - ny - 1 :
                                 ny);
                 setTargetPositionDirect(nx, ny);
             }
         }
 
         private void setTargetPositionDirect(float x, float y) {
-            target_x = x;
-            target_y = y;
+            targetX = x;
+            targetY = y;
         }
 
         private void forceStop() {
-            setTargetPosition(cur_x, cur_y);
+            setTargetPosition(curX, curY);
             vx = 0;
             vy = 0;
         }
 
         private boolean isStateChanged() {
-            return state_changed;
+            return stateChanged;
         }
 
         private boolean isPositionMoved() {
-            return position_moved;
+            return positionMoved;
         }
 
         private MotionDrawable getCurrentDrawable() {
-            return params.getDrawable(cur_state);
+            return params.getDrawable(curState);
         }
 
         private Point getPosition() {
             MotionDrawable drawable = getCurrentDrawable();
-            return new Point((int) (cur_x - drawable.getIntrinsicWidth() / 2f),
-                    (int) (cur_y - drawable.getIntrinsicHeight() / 2f));
+            return new Point((int) (curX - drawable.getIntrinsicWidth() / 2f),
+                    (int) (curY - drawable.getIntrinsicHeight() / 2f));
         }
     }
 
@@ -745,8 +744,8 @@ public class AnimationService extends Service {
             implements MotionDrawable.OnMotionEndListener {
         @Override
         public void onMotionEnd(MotionDrawable drawable) {
-            if (is_started && motion_state != null &&
-                    drawable == motion_state.getCurrentDrawable()) {
+            if (isStarted && motionState != null &&
+                    drawable == motionState.getCurrentDrawable()) {
                 updateToNext();
             }
         }

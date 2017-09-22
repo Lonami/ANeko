@@ -56,25 +56,25 @@ public class MotionParams {
     private static final String DEF_WALL_STATE_PREFIX = "wall";
 
     private float acceleration;
-    private float max_velocity;
-    private float deacceleration_distance;
-    private float proximity_distance;
+    private float maxVelocity;
+    private float deaccelerationDistance;
+    private float proximityDistance;
 
-    private String initial_state;
-    private String awake_state;
-    private String move_state_prefix;
-    private String wall_state_prefix;
+    private String initialState;
+    private String awakeState;
+    private String moveStatePrefix;
+    private String wallStatePrefix;
 
     private HashMap<String, Motion> motions = new HashMap<String, Motion>();
 
     private static class Motion {
         private String name;
-        private String next_state = null;
+        private String nextState;
 
-        private boolean check_move = false;
-        private boolean check_wall = false;
+        private boolean checkMove;
+        private boolean checkWall;
 
-        private MotionDrawable items = null;
+        private MotionDrawable items;
     }
 
     public MotionParams(Context context, Resources res, int resid) {
@@ -93,15 +93,15 @@ public class MotionParams {
     }
 
     public float getMaxVelocity() {
-        return max_velocity;
+        return maxVelocity;
     }
 
     public float getDeaccelerationDistance() {
-        return deacceleration_distance;
+        return deaccelerationDistance;
     }
 
     public float getProximityDistance() {
-        return proximity_distance;
+        return proximityDistance;
     }
 
     public boolean hasState(String state) {
@@ -109,19 +109,19 @@ public class MotionParams {
     }
 
     public String getInitialState() {
-        return initial_state;
+        return initialState;
     }
 
     public String getAwakeState() {
-        return awake_state;
+        return awakeState;
     }
 
     public String getMoveState(MoveDirection dir) {
-        return move_state_prefix + enumToString(dir);
+        return moveStatePrefix + enumToString(dir);
     }
 
     public String getWallState(WallDirection dir) {
-        return wall_state_prefix + enumToString(dir);
+        return wallStatePrefix + enumToString(dir);
     }
 
     private static String enumToString(final WallDirection dir) {
@@ -164,17 +164,17 @@ public class MotionParams {
 
     public String getNextState(String state) {
         Motion motion = motions.get(state);
-        return (motion != null ? motion.next_state : null);
+        return (motion != null ? motion.nextState : null);
     }
 
     public boolean needCheckMove(String state) {
         Motion motion = motions.get(state);
-        return (motion != null ? motion.check_move : false);
+        return (motion != null ? motion.checkMove : false);
     }
 
     public boolean needCheckWall(String state) {
         Motion motion = motions.get(state);
-        return (motion != null ? motion.check_wall : false);
+        return (motion != null ? motion.checkWall : false);
     }
 
     public MotionDrawable getDrawable(String state) {
@@ -211,26 +211,26 @@ public class MotionParams {
         acceleration = density * attrs.getAttributeIntValue(
                 null, ATTR_ACCELERATION, DEF_ACCELERATION);
 
-        deacceleration_distance = density * attrs.getAttributeIntValue(
+        deaccelerationDistance = density * attrs.getAttributeIntValue(
                 null, ATTR_DEACCELERATION, DEF_DEACCELERATE_DISTANCE);
 
-        max_velocity = density * attrs.getAttributeIntValue(
+        maxVelocity = density * attrs.getAttributeIntValue(
                 null, ATTR_MAX_VELOCITY, DEF_MAX_VELOCITY);
 
-        proximity_distance = density * attrs.getAttributeIntValue(
+        proximityDistance = density * attrs.getAttributeIntValue(
                 null, ATTR_PROXIMITY, DEF_PROXIMITY_DISTANCE);
 
-        initial_state = attrs.getAttributeValue(null, ATTR_INITIAL_STATE);
-        initial_state = (initial_state != null ? initial_state : DEF_INITIAL_STATE);
+        initialState = attrs.getAttributeValue(null, ATTR_INITIAL_STATE);
+        initialState = (initialState != null ? initialState : DEF_INITIAL_STATE);
 
-        awake_state = attrs.getAttributeValue(null, ATTR_AWAKE_STATE);
-        awake_state = (awake_state != null ? awake_state : DEF_AWAKE_STATE);
+        awakeState = attrs.getAttributeValue(null, ATTR_AWAKE_STATE);
+        awakeState = (awakeState != null ? awakeState : DEF_AWAKE_STATE);
 
-        move_state_prefix = attrs.getAttributeValue(null, ATTR_MOVE_STATE_PREFIX);
-        move_state_prefix = (move_state_prefix != null ? move_state_prefix : DEF_MOVE_STATE_PREFIX);
+        moveStatePrefix = attrs.getAttributeValue(null, ATTR_MOVE_STATE_PREFIX);
+        moveStatePrefix = (moveStatePrefix != null ? moveStatePrefix : DEF_MOVE_STATE_PREFIX);
 
-        wall_state_prefix = attrs.getAttributeValue(null, ATTR_WALL_STATE_PREFIX);
-        wall_state_prefix = (wall_state_prefix != null ? wall_state_prefix : DEF_WALL_STATE_PREFIX);
+        wallStatePrefix = attrs.getAttributeValue(null, ATTR_WALL_STATE_PREFIX);
+        wallStatePrefix = (wallStatePrefix != null ? wallStatePrefix : DEF_WALL_STATE_PREFIX);
 
         int depth = xml.getDepth();
         while (true) {
@@ -263,9 +263,9 @@ public class MotionParams {
         }
 
         int duration = attrs.getAttributeIntValue(null, ATTR_DURATION, -1);
-        motion.next_state = attrs.getAttributeValue(null, ATTR_NEXT_STATE);
-        motion.check_move = attrs.getAttributeBooleanValue(null, ATTR_CHECK_MOVE, false);
-        motion.check_wall = attrs.getAttributeBooleanValue(null, ATTR_CHECK_WALL, false);
+        motion.nextState = attrs.getAttributeValue(null, ATTR_NEXT_STATE);
+        motion.checkMove = attrs.getAttributeBooleanValue(null, ATTR_CHECK_MOVE, false);
+        motion.checkWall = attrs.getAttributeBooleanValue(null, ATTR_CHECK_WALL, false);
 
         motion.items = new MotionDrawable();
 

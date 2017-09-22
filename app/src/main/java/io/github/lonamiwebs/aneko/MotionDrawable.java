@@ -19,23 +19,23 @@ public class MotionDrawable extends Drawable implements Animatable {
 
     private MotionConstantState state;
 
-    private int cur_frame = -1;
-    private int cur_repeat = 0;
-    private int cur_duration = -1;
-    private OnMotionEndListener on_end = null;
+    private int curFrame = -1;
+    private int curRepeat = 0;
+    private int curDuration = -1;
+    private OnMotionEndListener onEnd;
 
     private int alpha = 0xff;
     private boolean dither = true;
-    private ColorFilter color_filter;
+    private ColorFilter colorFilter;
 
-    private Runnable frame_updater = new Runnable() {
+    private Runnable frameUpdater = new Runnable() {
         @Override
         public void run() {
             updateFrame();
         }
     };
-    private Drawable.Callback child_callback = new ChildCallback();
-    private OnMotionEndListener child_end = new ChildOnMotionEnd();
+    private Drawable.Callback childCallback = new ChildCallback();
+    private OnMotionEndListener childEnd = new ChildOnMotionEnd();
 
     public MotionDrawable() {
         state = new MotionConstantState();
@@ -44,7 +44,7 @@ public class MotionDrawable extends Drawable implements Animatable {
     public MotionDrawable(AnimationDrawable anim) {
         this();
 
-        state.repeat_count = (anim.isOneShot() ? 1 : -1);
+        state.repeatCount = (anim.isOneShot() ? 1 : -1);
 
         int nf = anim.getNumberOfFrames();
         for (int i = 0; i < nf; i++) {
@@ -53,11 +53,11 @@ public class MotionDrawable extends Drawable implements Animatable {
     }
 
     public void setTotalDuration(int duration) {
-        state.total_duration = duration;
+        state.totalDuration = duration;
     }
 
     public void setRepeatCount(int count) {
-        state.repeat_count = count;
+        state.repeatCount = count;
     }
 
     public void addFrame(Drawable drawable, int duration) {
@@ -69,23 +69,23 @@ public class MotionDrawable extends Drawable implements Animatable {
 
         if (drawable instanceof MotionDrawable) {
             MotionDrawable md = (MotionDrawable) drawable;
-            md.setOnMotionEndListener(child_end);
+            md.setOnMotionEndListener(childEnd);
         }
-        drawable.setCallback(child_callback);
+        drawable.setCallback(childCallback);
         state.addFrame(drawable, duration);
     }
 
     public Drawable getCurrentFrame() {
-        return state.getFrame(cur_frame);
+        return state.getFrame(curFrame);
     }
 
     public void setOnMotionEndListener(OnMotionEndListener listener) {
-        on_end = listener;
+        onEnd = listener;
     }
 
     private void invokeOnMotionEndListener() {
-        if (on_end != null) {
-            on_end.onMotionEnd(this);
+        if (onEnd != null) {
+            onEnd.onMotionEnd(this);
         }
     }
 
@@ -132,11 +132,11 @@ public class MotionDrawable extends Drawable implements Animatable {
 
     @Override
     public void setColorFilter(ColorFilter cf) {
-        if (color_filter != cf) {
-            color_filter = cf;
+        if (colorFilter != cf) {
+            colorFilter = cf;
             Drawable current = getCurrentFrame();
             if (current != null) {
-                current.setColorFilter(color_filter);
+                current.setColorFilter(colorFilter);
             }
         }
     }
@@ -199,15 +199,15 @@ public class MotionDrawable extends Drawable implements Animatable {
 
     @Override
     public boolean isRunning() {
-        return (cur_duration >= 0);
+        return (curDuration >= 0);
     }
 
     @Override
     public void start() {
         if (!isRunning()) {
-            cur_frame = -1;
-            cur_repeat = 0;
-            cur_duration = 0;
+            curFrame = -1;
+            curRepeat = 0;
+            curDuration = 0;
             updateFrame();
         }
     }
@@ -215,28 +215,28 @@ public class MotionDrawable extends Drawable implements Animatable {
     @Override
     public void stop() {
         if (isRunning()) {
-            unscheduleSelf(frame_updater);
-            cur_duration = -1;
+            unscheduleSelf(frameUpdater);
+            curDuration = -1;
         }
     }
 
     private void updateFrame() {
         int nf = state.getFrameCount();
-        int next = cur_frame + 1;
-        int next_repeat = cur_repeat;
+        int next = curFrame + 1;
+        int nextRepeat = curRepeat;
         if (next >= nf) {
             next = 0;
-            next_repeat = cur_repeat + 1;
+            nextRepeat = curRepeat + 1;
 
-            if (state.repeat_count >= 0 && next_repeat >= state.repeat_count) {
-                cur_duration = -1;
+            if (state.repeatCount >= 0 && nextRepeat >= state.repeatCount) {
+                curDuration = -1;
                 invokeOnMotionEndListener();
                 return;
             }
         }
 
-        if (state.total_duration >= 0 && cur_duration >= state.total_duration) {
-            cur_duration = -1;
+        if (state.totalDuration >= 0 && curDuration >= state.totalDuration) {
+            curDuration = -1;
             invokeOnMotionEndListener();
             return;
         }
@@ -248,40 +248,40 @@ public class MotionDrawable extends Drawable implements Animatable {
             }
         }
 
-        cur_frame = next;
-        cur_repeat = next_repeat;
+        curFrame = next;
+        curRepeat = nextRepeat;
 
-        Drawable next_drawable = state.getFrame(next);
-        next_drawable.setVisible(isVisible(), true);
-        next_drawable.setAlpha(alpha);
-        next_drawable.setDither(dither);
-        next_drawable.setColorFilter(color_filter);
-        next_drawable.setState(getState());
-        next_drawable.setLevel(getLevel());
-        next_drawable.setBounds(getBounds());
+        Drawable nextDrawable = state.getFrame(next);
+        nextDrawable.setVisible(isVisible(), true);
+        nextDrawable.setAlpha(alpha);
+        nextDrawable.setDither(dither);
+        nextDrawable.setColorFilter(colorFilter);
+        nextDrawable.setState(getState());
+        nextDrawable.setLevel(getLevel());
+        nextDrawable.setBounds(getBounds());
 
         int duration = state.getFrameDuration(next);
-        int next_duration =
-            (duration < 0 && state.total_duration < 0 ? -1 :
-             duration < 0 ? state.total_duration - cur_duration :
-             state.total_duration < 0 ? cur_duration + duration :
-             Math.min(cur_duration + duration,
-                      state.total_duration));
-        if(next_duration >= 0) {
-            duration = next_duration - cur_duration;
-            scheduleSelf(frame_updater, SystemClock.uptimeMillis() + duration);
+        int nextDuration =
+            (duration < 0 && state.totalDuration < 0 ? -1 :
+             duration < 0 ? state.totalDuration - curDuration :
+             state.totalDuration < 0 ? curDuration + duration :
+             Math.min(curDuration + duration,
+                      state.totalDuration));
+        if(nextDuration >= 0) {
+            duration = nextDuration - curDuration;
+            scheduleSelf(frameUpdater, SystemClock.uptimeMillis() + duration);
         }
 
-        cur_duration = (next_duration >= 0 ? next_duration : cur_duration);
+        curDuration = (nextDuration >= 0 ? nextDuration : curDuration);
         invalidateSelf();
     }
 
     private static class MotionConstantState extends ConstantState {
         private ArrayList<ItemInfo> drawables;
-        private int changing_configurations = 0;
+        private int changingConfigurations = 0;
         private int opacity;
-        private int total_duration = 0;
-        private int repeat_count = 1;
+        private int totalDuration = 0;
+        private int repeatCount = 1;
 
         private MotionConstantState() {
             drawables = new ArrayList<ItemInfo>();
@@ -289,13 +289,13 @@ public class MotionDrawable extends Drawable implements Animatable {
 
         private void addFrame(Drawable drawable, int duration) {
             drawables.add(new ItemInfo(drawable, duration));
-            if (duration >= 0 && total_duration >= 0) {
-                total_duration += duration;
+            if (duration >= 0 && totalDuration >= 0) {
+                totalDuration += duration;
             } else {
-                total_duration = -1;
+                totalDuration = -1;
             }
 
-            changing_configurations |= drawable.getChangingConfigurations();
+            changingConfigurations |= drawable.getChangingConfigurations();
             opacity = (drawables.size() > 1 ?
                     Drawable.resolveOpacity(opacity, drawable.getOpacity()) :
                     drawable.getOpacity());
@@ -325,7 +325,7 @@ public class MotionDrawable extends Drawable implements Animatable {
 
         @Override
         public int getChangingConfigurations() {
-            return changing_configurations;
+            return changingConfigurations;
         }
 
         @Override
