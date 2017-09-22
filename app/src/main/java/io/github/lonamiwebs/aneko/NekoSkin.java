@@ -3,8 +3,7 @@ package io.github.lonamiwebs.aneko;
 import android.app.Activity;
 import android.os.Bundle;
 
-public class NekoSkin extends Activity
-{
+public class NekoSkin extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
