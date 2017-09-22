@@ -26,8 +26,7 @@ class MotionState {
     MotionParams params;
     int alpha = 0xff;
 
-    Behaviour behaviour = Behaviour.closer;
-    int curBehaviourIdx = 0;
+    Behaviour behaviour = Behaviour.fromIndex(0);
     long lastBehaviourChanged = 0;
 
     String curState = null;
@@ -212,13 +211,6 @@ class MotionState {
     void setBehaviour(Behaviour b) {
         behaviour = b;
         lastBehaviourChanged = 0;
-
-        for (int i = 0; i < Behaviour.BEHAVIOURS.length; i++) {
-            if (Behaviour.BEHAVIOURS[i] == behaviour) {
-                curBehaviourIdx = i;
-                break;
-            }
-        }
     }
 
     void setCurrentPosition(float x, float y) {
@@ -227,54 +219,11 @@ class MotionState {
     }
 
     void setTargetPosition(float x, float y) {
-        if (Behaviour.BEHAVIOURS[curBehaviourIdx] == Behaviour.closer) {
-            setTargetPositionDirect(x, y);
-        } else if (Behaviour.BEHAVIOURS[curBehaviourIdx] == Behaviour.further) {
-            float dx = displayWidth / 2f - x;
-            float dy = displayHeight / 2f - y;
-            if (dx == 0 && dy == 0) {
-                float ang = random.nextFloat() * (float) Math.PI * 2;
-                dx = (float) Math.cos(ang);
-                dy = (float) Math.sin(ang);
-            }
-            if (dx < 0) {
-                dx = -dx;
-                dy = -dy;
-            }
+        PointF target = behaviour.getTargetPosition(
+                new PointF(x, y), new PointF(curX, curY), new PointF(displayWidth, displayHeight));
 
-            PointF e1, e2;
-            if (dy > dx * displayHeight / displayWidth ||
-                    dy < -dx * displayHeight / displayWidth) {
-                float dxdy = dx / dy;
-                e1 = new PointF((displayWidth - displayHeight * dxdy) / 2f, 0);
-                e2 = new PointF((displayWidth + displayHeight * dxdy) / 2f, displayHeight);
-            } else {
-                float dydx = dy / dx;
-                e1 = new PointF(0, (displayHeight - displayWidth * dydx) / 2f);
-                e2 = new PointF(displayWidth, (displayHeight + displayWidth * dydx) / 2f);
-            }
-
-            double d1 = Math.hypot(e1.x - x, e1.y - y);
-            double d2 = Math.hypot(e2.x - x, e2.y - y);
-            PointF e = (d1 > d2 ? e1 : e2);
-
-            float r = 0.9f + random.nextFloat() * 0.1f;
-            setTargetPositionDirect(e.x * r + x * (1 - r), e.y * r + y * (1 - r));
-        } else {
-            float minWh2 = Math.min(displayWidth, displayHeight) / 2f;
-            float r = random.nextFloat() * minWh2 + minWh2;
-            float a = random.nextFloat() * 360;
-            float nx = curX + r * (float) Math.cos(a);
-            float ny = curY + r * (float) Math.sin(a);
-
-            nx = (nx < 0 ? -nx :
-                    nx >= displayWidth ? displayWidth * 2 - nx - 1 :
-                            nx);
-            ny = (ny < 0 ? -ny :
-                    ny >= displayHeight ? displayHeight * 2 - ny - 1 :
-                            ny);
-            setTargetPositionDirect(nx, ny);
-        }
+        targetX = target.x;
+        targetY = target.y;
     }
 
     void setTargetPositionDirect(float x, float y) {

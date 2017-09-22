@@ -306,7 +306,7 @@ public class AnimationService extends Service {
         String alphaStr = prefs.getString(PREF_KEY_TRANSPARENCY, "0.0");
         motionState.alpha = (int) ((1 - Float.valueOf(alphaStr)) * 0xff);
 
-        motionState.setBehaviour(Behaviour.valueOf(
+        motionState.setBehaviour(Behaviour.fromName(
                 prefs.getString(PREF_KEY_BEHAVIOUR, motionState.behaviour.toString())));
 
         motionState.setDisplaySize(dw, dh);
