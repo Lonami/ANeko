@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.github.lonamiwebs.aneko.service.AnimationService;
+
 public class SkinPreference extends DialogPreference {
     private static final String KEY_ICON = "icon";
     private static final String KEY_LABEL = "label";

@@ -30,7 +30,7 @@
       </intent-filter>
     </receiver>
 
-    <service android:name=".AnimationService" />
+    <service android:name=".service.AnimationService" />
 
     <activity android:name=".NekoSkin"
               android:label="@string/skin_name_neko">

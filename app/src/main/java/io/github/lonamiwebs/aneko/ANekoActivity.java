@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 
+import io.github.lonamiwebs.aneko.service.AnimationService;
+
 public class ANekoActivity extends PreferenceActivity {
     @Override
     public void onCreate(Bundle savedState) {
